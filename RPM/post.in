@@ -2,6 +2,7 @@
 
 do_updatepciids() {
   update-pciids >/dev/null 2>&1 || true
+  return
 }
 
 do_configureLogrotate() {
@@ -131,6 +132,7 @@ do_install_amdsmi_python_lib() {
   local PREVIOUS_PIP_BREAK_SYSTEM_PACKAGES="$PIP_BREAK_SYSTEM_PACKAGES"
   export PIP_BREAK_SYSTEM_PACKAGES=1
 
+
   # Remove old python library
   local pip_list_output
   pip_list_output=$(python3 -m pip list --format=columns --disable-pip-version-check)
@@ -146,29 +148,9 @@ do_install_amdsmi_python_lib() {
     return
   fi
 
-  # upgrade pip if it's an ancient version
-  # otherwise the amdsmi install will fail
-  local pip_version
-  pip_version=$(python3 -m pip --version | grep -Eo '^[^\ ]+ ([0-9]+)' | grep -Eo '[0-9]+$')
-  if [[ "$pip_version" -lt 19 ]]; then
-    echo "Detected ancient pip version ($pip_version)... Upgrading..."
-    python3 -m pip install --upgrade pip --quiet --disable-pip-version-check
-  fi
-  unset pip_version
-
-  # Check PyYAML dependency
-  local pyyaml_version
-  pyyaml_version=$(pip show pyyaml | grep -Po '(?<=Version: )[0-9]')
-  if [[ "$pyyaml_version" -lt 5 ]]; then
-    echo "Detected ancient pyyaml version ($pyyaml_version)... Upgrading..."
-    python3 -m pip install 'PyYAML>=5.1' --quiet --disable-pip-version-check --ignore-installed
-  fi
-  unset pyyaml_version
-
   # install python library at @CPACK_PACKAGING_INSTALL_PREFIX@/@SHARE_INSTALL_PREFIX@/amdsmi
   local python_lib_path=@CPACK_PACKAGING_INSTALL_PREFIX@/@SHARE_INSTALL_PREFIX@
-  python3 -m pip install "$python_lib_path" --quiet --disable-pip-version-check
-
+  python3 -m pip install "$python_lib_path" --quiet --disable-pip-version-check --no-build-isolation --no-index
   export PIP_ROOT_USER_ACTION="$PREVIOUS_PIP_ROOT_USER_ACTION"
   export PIP_BREAK_SYSTEM_PACKAGES="$PREVIOUS_PIP_BREAK_SYSTEM_PACKAGES"
 
@@ -185,6 +167,7 @@ do_install_amdsmi_python_lib() {
     fi
   fi
 }
+
 
 # post install or upgrade, $i is 1 or 2 -> do these actions
 if [ "$1" -ge 1 ]; then

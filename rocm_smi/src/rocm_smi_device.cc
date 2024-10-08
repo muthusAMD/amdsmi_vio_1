@@ -3,7 +3,7 @@
  * The University of Illinois/NCSA
  * Open Source License (NCSA)
  *
- * Copyright (c) 2017-2023, Advanced Micro Devices, Inc.
+ * Copyright (c) 2017-2024, Advanced Micro Devices, Inc.
  * All rights reserved.
  *
  * Developed by:
@@ -490,7 +490,7 @@ static const std::map<const char *, dev_depends_t> kDevFuncDependsMap = {
     // Functions with only mandatory dependencies
   {"rsmi_dev_vram_vendor_get",           {{kDevVramVendorFName}, {}}},
   {"rsmi_dev_id_get",                    {{kDevDevIDFName}, {}}},
-  {"rsmi_dev_oam_id_get",                {{kDevXGMIPhysicalIDFName}, {}}},
+  {"rsmi_dev_xgmi_physical_id_get",      {{kDevXGMIPhysicalIDFName}, {}}},
   {"rsmi_dev_revision_get",              {{kDevDevRevIDFName}, {}}},
   {"rsmi_dev_vendor_id_get",             {{kDevVendorIDFName}, {}}},
   {"rsmi_dev_name_get",                  {{kDevVendorIDFName,
@@ -1006,6 +1006,7 @@ const char* Device::get_type_string(DevInfoTypes type) {
   return "Unknown";
 
 }
+
 int Device::readDevInfoBinary(DevInfoTypes type, std::size_t b_size,
                                 void *p_binary_data) {
   auto sysfs_path = path_;
@@ -1043,15 +1044,17 @@ int Device::readDevInfoBinary(DevInfoTypes type, std::size_t b_size,
     LOG_ERROR(ss);
     return ENOENT;
   }
-  ss << "Successfully read DevInfoBinary for DevInfoType ("
-     << get_type_string(type) << ") - SYSFS ("
-     << sysfs_path << "), returning binaryData = " << p_binary_data
-     << "; byte_size = " << std::dec << static_cast<int>(b_size);
+  if (ROCmLogging::Logger::getInstance()->isLoggerEnabled()) {
+    ss << "Successfully read DevInfoBinary for DevInfoType ("
+       << get_type_string(type) << ") - SYSFS ("
+       << sysfs_path << "), returning binaryData = " << p_binary_data
+       << "; byte_size = " << std::dec << static_cast<int>(b_size);
 
-  std::string metricDescription = "AMD SMI GPU METRICS (16-byte width), "
+    std::string metricDescription = "AMD SMI GPU METRICS (16-byte width), "
                                   + sysfs_path;
-  logHexDump(metricDescription.c_str(), p_binary_data, b_size, 16);
-  LOG_INFO(ss);
+    logHexDump(metricDescription.c_str(), p_binary_data, b_size, 16);
+    LOG_INFO(ss);
+  }
   return 0;
 }
 

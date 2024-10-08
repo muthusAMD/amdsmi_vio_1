@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2023 Advanced Micro Devices. All rights reserved.
+# Copyright (C) 2024 Advanced Micro Devices. All rights reserved.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of
 # this software and associated documentation files (the "Software"), to deal in
@@ -107,6 +107,7 @@ class AmdSmiTimeoutException(AmdSmiLibraryException):
 class AmdSmiParameterException(AmdSmiException):
     def __init__(self, receivedValue, expectedType, msg=None):
         super().__init__(msg)
+        self.err_code = None
         self.actualType = type(receivedValue)
         self.expectedType = expectedType
         self.set_err_msg()

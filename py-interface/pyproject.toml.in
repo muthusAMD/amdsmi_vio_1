@@ -16,8 +16,7 @@ readme = {file = "amdsmi/README.md", content-type = "text/markdown"}
 description = "AMDSMI Python LIB - AMD GPU Monitoring Library"
 requires-python = ">=3.6"
 dependencies = [
-    "PyYAML >= 5.0",
-    "clang >= 14.0"
+    "PyYAML >= 3.12",
 ]
 
 [project.urls]
@@ -29,3 +28,9 @@ packages = ["amdsmi"]
 # install libamd_smi.so
 [tool.setuptools.package-data]
 amdsmi = ["*.so"]
+
+[tool.pytest.ini_options]
+pythonpath = "/opt/rocm/share/amd_smi"
+addopts = [
+    "--import-mode=importlib",
+]

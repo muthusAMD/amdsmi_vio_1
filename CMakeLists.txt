@@ -28,7 +28,7 @@ find_program(GIT NAMES git)
 
 ## Setup the package version based on git tags.
 set(PKG_VERSION_GIT_TAG_PREFIX "amdsmi_pkg_ver")
-get_package_version_number("24.6.1" ${PKG_VERSION_GIT_TAG_PREFIX} GIT)
+get_package_version_number("24.7.0" ${PKG_VERSION_GIT_TAG_PREFIX} GIT)
 message("Package version: ${PKG_VERSION_STR}")
 set(${AMD_SMI_LIBS_TARGET}_VERSION_MAJOR "${CPACK_PACKAGE_VERSION_MAJOR}")
 set(${AMD_SMI_LIBS_TARGET}_VERSION_MINOR "${CPACK_PACKAGE_VERSION_MINOR}")
@@ -70,7 +70,7 @@ include(GNUInstallDirs)
 
 option(BUILD_TESTS "Build test suite" OFF)
 option(ENABLE_ASAN_PACKAGING "" OFF)
-option(ENABLE_ESMI_LIB "" ON)
+option(ENABLE_ESMI_LIB "Build ESMI Library" ON)
 
 include(CMakeDependentOption)
 # these options don't work without BUILD_SHARED_LIBS
@@ -185,9 +185,10 @@ if(BUILD_TESTS)
     set(TESTS_COMPONENT "tests")
     #add_subdirectory("tests/rocm_smi_test")
     add_subdirectory("tests/amd_smi_test")
+    add_subdirectory("tests/python_unittest")
 endif()
 
-# python interface and CLI depend on shared libraries
+# python interface, CLI, and py-test depend on shared libraries
 if(BUILD_SHARED_LIBS)
     add_subdirectory("py-interface")
     if(BUILD_CLI)
@@ -205,7 +206,7 @@ configure_package_config_file(
 write_basic_package_version_file(
     ${CMAKE_CURRENT_BINARY_DIR}/amd_smi-config-version.cmake
     VERSION
-    "${AMD_SMI_LIBS_TARGET_VERSION_MAJOR}.${AMD_SMI_LIBS_TARGET_VERSION_MINOR}.${AMD_SMI_LIBS_TARGET_VERSION_PATCH}"
+    "${CPACK_PACKAGE_VERSION}"
     COMPATIBILITY SameMajorVersion)
 
 install(
@@ -229,7 +230,7 @@ install(
     COMPONENT dev)
 
 #License file
-set(CPACK_RPM_PACKAGE_LICENSE "NCSA")
+set(CPACK_RPM_PACKAGE_LICENSE "MIT")
 # install license file in share/doc/amd_smi-asan folder
 install(
     FILES ${CPACK_RESOURCE_FILE_LICENSE}
@@ -249,13 +250,13 @@ install(
     DESTINATION share/doc/${AMD_SMI}
     COMPONENT dev)
 
+# Make for goamdsmi_shim library
+add_subdirectory(goamdsmi_shim)
+
 #Debian package specific variables
-set(CPACK_DEBIAN_PACKAGE_PROVIDES "amd-smi")
-set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "python3-argcomplete, libdrm-dev, python3-yaml")
+set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "python3-argcomplete, libdrm-dev, python3-PyYAML")
 set(CPACK_DEBIAN_ASAN_PACKAGE_RECOMMENDS ${CPACK_DEBIAN_PACKAGE_RECOMMENDS})
 set(CPACK_DEBIAN_DEV_PACKAGE_RECOMMENDS ${CPACK_DEBIAN_PACKAGE_RECOMMENDS})
-set(CPACK_DEBIAN_ASAN_PACKAGE_PROVIDES "${AMD_SMI_PACKAGE}-asan")
-set(CPACK_DEBIAN_DEV_PACKAGE_PROVIDES "${AMD_SMI_PACKAGE}")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "sudo, python3 (>= 3.6.8), python3-pip")
 set(CPACK_DEBIAN_ASAN_PACKAGE_DEPENDS ${CPACK_DEBIAN_PACKAGE_DEPENDS})
 set(CPACK_DEBIAN_DEV_PACKAGE_DEPENDS ${CPACK_DEBIAN_PACKAGE_DEPENDS})
@@ -272,9 +273,6 @@ set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION
 if(CPACK_RPM_PACKAGE_RELEASE)
     set(CPACK_RPM_PACKAGE_RELEASE_DIST ON)
 endif()
-set(CPACK_RPM_PACKAGE_PROVIDES "amd-smi")
-set(CPACK_RPM_DEV_PACKAGE_PROVIDES "${AMD_SMI_PACKAGE}")
-set(CPACK_RPM_ASAN_PACKAGE_PROVIDES "${AMD_SMI_PACKAGE}-asan")
 # NOTE: RPM SUGGESTS DO NOT WORK! https://bugzilla.redhat.com/show_bug.cgi?id=1811358
 set(CPACK_RPM_PACKAGE_SUGGESTS "python3-argcomplete")
 set(CPACK_RPM_DEV_PACKAGE_SUGGESTS ${CPACK_RPM_PACKAGE_SUGGESTS})
@@ -286,6 +284,9 @@ set(CPACK_RPM_ASAN_PACKAGE_REQUIRES ${CPACK_RPM_PACKAGE_REQUIRES})
 
 # don't terminate if bytecompile of python files fails
 set(CPACK_RPM_SPEC_MORE_DEFINE "%define _python_bytecompile_errors_terminate_build 0")
+# Cpack converts !/usr/bin/env python3 to /usr/libexec/platform-python in RHEL8.
+# prevent the BRP(buildroot policy) script from checking and modifying interpreter directives
+string( APPEND CPACK_RPM_SPEC_MORE_DEFINE "\n%undefine __brp_mangle_shebangs")
 
 # Add rocm-core dependency if -DROCM_DEP_ROCMCORE=ON is passed
 if(ROCM_DEP_ROCMCORE)

@@ -3,7 +3,7 @@
  * The University of Illinois/NCSA
  * Open Source License (NCSA)
  *
- * Copyright (c) 2018-2023, Advanced Micro Devices, Inc.
+ * Copyright (c) 2018-2024, Advanced Micro Devices, Inc.
  * All rights reserved.
  *
  * Developed by:
@@ -48,14 +48,18 @@
 #include <algorithm>
 #include <cstdint>
 #include <iomanip>
+#include <iosfwd>
 #include <iostream>
+#include <iterator>
 #include <limits>
+#include <ostream>
 #include <queue>
 #include <sstream>
 #include <string>
 #include <tuple>
 #include <type_traits>
 #include <vector>
+#include <utility>
 
 #include "rocm_smi/rocm_smi_device.h"
 
@@ -126,8 +130,8 @@ std::string print_rsmi_od_volt_freq_data_t(rsmi_od_volt_freq_data_t *odv);
 std::string print_rsmi_od_volt_freq_regions(uint32_t num_regions,
                                             rsmi_freq_volt_region_t *regions);
 bool is_sudo_user();
-rsmi_status_t rsmi_get_gfx_target_version(uint32_t dv_ind,
-  std::string *gfx_version);
+rsmi_status_t rsmi_get_gfx_target_version(uint32_t dv_ind, std::string *gfx_version);
+rsmi_status_t rsmi_dev_number_of_computes_get(uint32_t dv_ind, uint32_t* num_computes);
 
 std::string leftTrim(const std::string &s);
 std::string rightTrim(const std::string &s);
@@ -242,7 +246,7 @@ class ScopeGuard {
   __forceinline ~ScopeGuard() {
     if (!dismiss_) release_();
   }
-  __forceinline ScopeGuard& operator=(const ScopeGuard& rhs) {
+  __forceinline ScopeGuard& operator=(ScopeGuard& rhs) {
     dismiss_ = rhs.dismiss_;
     release_ = rhs.release_;
     rhs.dismiss_ = true;
@@ -594,10 +598,79 @@ class TagTextContents_t
                 }
             }
         }
+
 };
 
 using TextFileTagContents_t = TagTextContents_t<std::string, std::string,
                                                 std::string, std::string>;
+
+
+//
+//  Note: Output iterator that inserts a delimiter between elements.
+//
+template<typename DelimiterType, typename CharType = char,
+         typename TraitsType = std::char_traits<CharType>>
+class ostream_joiner {
+ public:
+  using Char_t = CharType;
+  using Traits_t = TraitsType;
+  using Ostream_t = std::basic_ostream<Char_t, Traits_t>;
+  using iterator_category = std::output_iterator_tag;
+  using value_type = void;
+  using difference_type = void;
+  using pointer = void;
+  using reference = void;
+
+
+  ostream_joiner(Ostream_t* outstream,
+                const DelimiterType& delimiter) noexcept
+      (std::is_nothrow_copy_constructible_v<DelimiterType>)
+        : m_outstream(outstream), m_delimiter(delimiter) {}
+
+  ostream_joiner(Ostream_t* outstream, DelimiterType&& delimiter) noexcept
+    (std::is_nothrow_move_constructible_v<DelimiterType>)
+      : m_outstream(outstream), m_delimiter(std::move(delimiter)) {}
+
+  template<typename ValueType> ostream_joiner& operator=(const ValueType& value) {
+    if (!m_is_first) {
+      *m_outstream << m_delimiter;
+    }
+    this->m_is_first = false;
+    this->m_value_count++;
+
+    if ((m_value_count % kMAX_VALUES_PER_LINE) == 0) {
+      *m_outstream << "\n" << value;
+      this->m_value_count = 0;
+    } else {
+      *m_outstream << value;
+    }
+
+    return *this;
+  }
+
+  ostream_joiner& operator*() noexcept { return *this; }
+  ostream_joiner& operator++() noexcept { return *this; }
+  ostream_joiner& operator++(int) noexcept { return *this; }
+
+
+ private:
+  Ostream_t* m_outstream;
+  DelimiterType m_delimiter;
+  bool m_is_first = true;
+  uint32_t m_value_count = 0;
+  const uint32_t kMAX_VALUES_PER_LINE = 9;
+};
+
+/// Object generator for ostream_joiner.
+template<typename CharType, typename TraitsType, typename DelimiterType>
+inline ostream_joiner<std::decay_t<DelimiterType>, CharType, TraitsType>
+  make_ostream_joiner(std::basic_ostream<CharType, TraitsType>* outstream,
+    DelimiterType&& delimiter) {
+    return {
+      outstream,
+      std::forward<DelimiterType>(delimiter)
+    };
+}
 
 
 }  // namespace smi

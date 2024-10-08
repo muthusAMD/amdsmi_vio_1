@@ -1,4 +1,4 @@
-/* * Copyright (C) 2023 Advanced Micro Devices. All rights reserved.
+/* * Copyright (C) 2024 Advanced Micro Devices. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -218,7 +218,7 @@ amdsmi_status_t smi_amdgpu_get_power_cap(amd::smi::AMDSmiGPUDevice* device, int 
     if (!device->check_if_drm_is_supported()) {
         return AMDSMI_STATUS_NOT_SUPPORTED;
     }
-    constexpr int DATA_SIZE = 10;
+    constexpr int DATA_SIZE = 16;
     char val[DATA_SIZE];
     std::string fullpath;
     amdsmi_status_t ret = AMDSMI_STATUS_SUCCESS;
@@ -578,6 +578,14 @@ amdsmi_status_t smi_amdgpu_get_market_name_from_dev_id(uint32_t device_id, char 
         case 0x74b5:
             strcpy(market_name, "MI300X-O");
             break;
+        case 0x74a2:
+        case 0x74b6:
+            strcpy(market_name, "MI308X");
+            break;
+        case 0x74a9:
+        case 0x74bd:
+            strcpy(market_name, "AMD Instinct MI300X HF");
+            break;
         default:
             return AMDSMI_STATUS_API_FAILED;
     }
@@ -615,3 +623,4 @@ amdsmi_status_t smi_amdgpu_is_gpu_power_management_enabled(amd::smi::AMDSmiGPUDe
     *enabled = false;
     return AMDSMI_STATUS_SUCCESS;
 }
+
