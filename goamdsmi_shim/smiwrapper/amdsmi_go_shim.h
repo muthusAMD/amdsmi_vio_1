@@ -343,11 +343,11 @@ uint64_t goamdsmi_gpu_dev_power_get(uint32_t dv_ind);
  *
  *  @param[in] ::uint32_t device index, uint32_t sensor, uint32_t metric
  *
- *  @retval ::uint64_t GPU current temperature
+ *  @retval ::int64_t GPU current temperature
  *  @retval -1 is returned upon failure.
  *
  */
-uint64_t goamdsmi_gpu_dev_temp_metric_get(uint32_t dv_ind, uint32_t sensor, uint32_t metric);
+int64_t goamdsmi_gpu_dev_temp_metric_get(uint32_t dv_ind, uint32_t sensor, uint32_t metric);
 
 /**
  *  @brief Go language stub to get the overdrive level of the device
@@ -572,3 +572,19 @@ uint64_t goamdsmi_gpu_dev_gpu_memory_usage_get(uint32_t dv_ind);
  *
  */
 uint64_t goamdsmi_gpu_dev_gpu_memory_total_get(uint32_t dv_ind);
+
+/**
+ *  @brief Go language stub to get the Total amount of GPU Memory
+ *
+ *  @details This function will call the rsmi_dev_memory_total_get()
+ *  function to return the total amount of memory. This value is then
+ *  passed as a uint64_t val to the Go routine that
+ *  called it.
+ *
+ *  @param[in] ::uint32_t device index, flag, ptr to rsmi_frequencies_t
+ *
+ *  @retval ::uint64_t Total GPU memory
+ *  @retval -1 is returned upon failure.
+ *
+ */
+bool goamdsmi_gpu_snap_violation_record(uint32_t dv_ind);

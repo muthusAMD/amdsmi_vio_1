@@ -87,7 +87,7 @@ func GO_gpu_dev_power_get(i int) (C.uint64_t) {
     return C.goamdsmi_gpu_dev_power_get(C.uint(i))
 }
 
-func GO_gpu_dev_temp_metric_get(i int, sensor int, metric int) (C.uint64_t) {
+func GO_gpu_dev_temp_metric_get(i int, sensor int, metric int) (C.int64_t) {
     return C.goamdsmi_gpu_dev_temp_metric_get(C.uint(i), C.uint(sensor), C.uint(metric))
 }
 
@@ -182,4 +182,8 @@ func GO_cpu_socket_power_cap_get(i int) (C.uint32_t) {
 
 func GO_cpu_prochot_status_get(i int) (C.uint32_t) {
 	return C.goamdsmi_cpu_prochot_status_get(C.uint(i))
+}
+
+func GO_gpu_snap_violation_record(i int) (bool) {
+	return bool(C.GO_gpu_snap_violation_record(C.uint(i))))
 }

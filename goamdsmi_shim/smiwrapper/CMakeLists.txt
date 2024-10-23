@@ -7,7 +7,7 @@ set(go_amd_smi_headers
   CACHE INTERNAL "")
 
 set(go_amd_smi_sources
-  ${CMAKE_CURRENT_SOURCE_DIR}/amdsmi_go_shim.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/amdsmi_go_shim.cc
     CACHE INTERNAL "")
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${go_amd_smi_amdsmi_includes})
