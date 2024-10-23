@@ -41,9 +41,8 @@
 #include "amdsmi_go_shim.h"
 #include <amd_smi/amdsmi.h>
 #include <unistd.h>
-#include <iostream>
-#include <chrono>
-//#define nullptr ((void*)0)
+//#include <chrono>
+#define nullptr ((void*)0)
 
 #define MAX_SOCKET_ACROSS_SYSTEM         4
 #define CPU_0                            0
@@ -685,21 +684,21 @@ uint64_t calculate_counter_delta(uint64_t start_counter, uint64_t end_counter)
     uint64_t acc_delta = 0;
 
     if(end_counter >= start_counter) { acc_delta = end_counter - start_counter; }
-    else                             { acc_delta = std::numeric_limits<uint64_t>::max() - end_counter + start_counter; }
+    else                             { acc_delta = GOAMDSMI_UINT64_MAX - end_counter + start_counter; }
 
     return acc_delta;
 }
-uint64_t calcualte_violation_percentageAndActiveStatus(uint64_t start_acc_counter, uint64_t end_acc_counter, uint64_t start_residency_acc, uint64_t end_residency_acc, uint8_t& active_thrm)
+uint64_t calcualte_violation_percentageAndActiveStatus(uint64_t start_acc_counter, uint64_t end_acc_counter, uint64_t start_residency_acc, uint64_t end_residency_acc, uint8_t* active_thrm)
 {
    uint64_t voilation_percentage = 0;
-   active_thrm                   = 0;
+   *active_thrm                  = 0;
 
    uint64_t acc_counter_delta   = calculate_counter_delta(start_acc_counter,   end_acc_counter);
    uint64_t residency_acc_delta = calculate_counter_delta(start_residency_acc, end_residency_acc);
 
    if(acc_counter_delta > 0)    { voilation_percentage = residency_acc_delta*100/acc_counter_delta; }
 
-   if(voilation_percentage > 0) { active_thrm = 1; }
+   if(voilation_percentage > 0) { *active_thrm = 1; }
    return voilation_percentage;
 }
 
@@ -709,12 +708,12 @@ bool goamdsmi_gpu_snap_violation_record(uint32_t dv_ind)
     if(false == amdsmi_gpu_metrics_snap_available[dv_ind])
     {
         if((AMDSMI_STATUS_SUCCESS == amdsmi_get_gpu_metrics_info(amdsmi_processor_handle_all_gpu_device_across_socket[dv_ind], &amdsmi_gpu_metrics[dv_ind])) &&
-           (!((amdsmi_gpu_metrics[dv_ind].accumulation_counter     == std::numeric_limits<uint64_t>::max()) &&
-              (amdsmi_gpu_metrics[dv_ind].prochot_residency_acc    == std::numeric_limits<uint64_t>::max()) &&
-              (amdsmi_gpu_metrics[dv_ind].ppt_residency_acc        == std::numeric_limits<uint64_t>::max()) &&
-              (amdsmi_gpu_metrics[dv_ind].socket_thm_residency_acc == std::numeric_limits<uint64_t>::max()) &&
-              (amdsmi_gpu_metrics[dv_ind].vr_thm_residency_acc     == std::numeric_limits<uint64_t>::max()) &&
-              (amdsmi_gpu_metrics[dv_ind].hbm_thm_residency_acc    == std::numeric_limits<uint64_t>::max()) )))
+           (!((amdsmi_gpu_metrics[dv_ind].accumulation_counter     == GOAMDSMI_UINT64_MAX) &&
+              (amdsmi_gpu_metrics[dv_ind].prochot_residency_acc    == GOAMDSMI_UINT64_MAX) &&
+              (amdsmi_gpu_metrics[dv_ind].ppt_residency_acc        == GOAMDSMI_UINT64_MAX) &&
+              (amdsmi_gpu_metrics[dv_ind].socket_thm_residency_acc == GOAMDSMI_UINT64_MAX) &&
+              (amdsmi_gpu_metrics[dv_ind].vr_thm_residency_acc     == GOAMDSMI_UINT64_MAX) &&
+              (amdsmi_gpu_metrics[dv_ind].hbm_thm_residency_acc    == GOAMDSMI_UINT64_MAX) )))
         {
             readSuccess = true;
             amdsmi_gpu_metrics_snap_available[dv_ind] = true;
@@ -723,26 +722,26 @@ bool goamdsmi_gpu_snap_violation_record(uint32_t dv_ind)
         if(false == readSuccess) return false;
 
         // wait 1ms before reading again
-        usleep(static_cast<int>(1*1000));
+        usleep(1*1000);
     }
 
     amdsmi_gpu_metrics_t amdsmi_gpu_metrics_temp;
     if((AMDSMI_STATUS_SUCCESS == amdsmi_get_gpu_metrics_info(amdsmi_processor_handle_all_gpu_device_across_socket[dv_ind], &amdsmi_gpu_metrics_temp)) &&
-       (!((amdsmi_gpu_metrics_temp.accumulation_counter     == std::numeric_limits<uint64_t>::max()) &&
-          (amdsmi_gpu_metrics_temp.prochot_residency_acc    == std::numeric_limits<uint64_t>::max()) &&
-          (amdsmi_gpu_metrics_temp.ppt_residency_acc        == std::numeric_limits<uint64_t>::max()) &&
-          (amdsmi_gpu_metrics_temp.socket_thm_residency_acc == std::numeric_limits<uint64_t>::max()) &&
-          (amdsmi_gpu_metrics_temp.vr_thm_residency_acc     == std::numeric_limits<uint64_t>::max()) &&
-          (amdsmi_gpu_metrics_temp.hbm_thm_residency_acc    == std::numeric_limits<uint64_t>::max()) )))
+       (!((amdsmi_gpu_metrics_temp.accumulation_counter     == GOAMDSMI_UINT64_MAX) &&
+          (amdsmi_gpu_metrics_temp.prochot_residency_acc    == GOAMDSMI_UINT64_MAX) &&
+          (amdsmi_gpu_metrics_temp.ppt_residency_acc        == GOAMDSMI_UINT64_MAX) &&
+          (amdsmi_gpu_metrics_temp.socket_thm_residency_acc == GOAMDSMI_UINT64_MAX) &&
+          (amdsmi_gpu_metrics_temp.vr_thm_residency_acc     == GOAMDSMI_UINT64_MAX) &&
+          (amdsmi_gpu_metrics_temp.hbm_thm_residency_acc    == GOAMDSMI_UINT64_MAX) )))
     {
         readSuccess = true;
     }
     if (enable_debug_level(GOAMDSMI_DEBUG_LEVEL_1)) {printf("AMDSMI, %s for Gpu:%d, SnapGpuViolationRecord\n", readSuccess?"Success":"Failed", dv_ind);}
     if(false == readSuccess) return false;
 
-    const auto p1 = std::chrono::system_clock::now();
-    auto current_time = std::chrono::duration_cast<std::chrono::microseconds>(p1.time_since_epoch()).count();
-    amdsmi_violation_status[dv_ind].reference_timestamp = current_time;
+    //const auto p1 = std::chrono::system_clock::now();
+    //auto current_time = std::chrono::duration_cast<std::chrono::microseconds>(p1.time_since_epoch()).count();
+    //amdsmi_violation_status[dv_ind].reference_timestamp = current_time;
 
     amdsmi_violation_status[dv_ind].acc_counter      = amdsmi_gpu_metrics_temp.accumulation_counter;
 
@@ -752,11 +751,11 @@ bool goamdsmi_gpu_snap_violation_record(uint32_t dv_ind)
     amdsmi_violation_status[dv_ind].acc_vr_thrm      = amdsmi_gpu_metrics_temp.vr_thm_residency_acc;
     amdsmi_violation_status[dv_ind].acc_hbm_thrm     = amdsmi_gpu_metrics_temp.hbm_thm_residency_acc;
 
-    amdsmi_violation_status[dv_ind].per_prochot_thrm = calcualte_violation_percentageAndActiveStatus(amdsmi_gpu_metrics[dv_ind].accumulation_counter, amdsmi_gpu_metrics_temp.accumulation_counter,  amdsmi_gpu_metrics[dv_ind].prochot_residency_acc,    amdsmi_gpu_metrics_temp.prochot_residency_acc,    amdsmi_violation_status[dv_ind].active_prochot_thrm);
-    amdsmi_violation_status[dv_ind].per_ppt_pwr      = calcualte_violation_percentageAndActiveStatus(amdsmi_gpu_metrics[dv_ind].accumulation_counter, amdsmi_gpu_metrics_temp.accumulation_counter,  amdsmi_gpu_metrics[dv_ind].ppt_residency_acc,        amdsmi_gpu_metrics_temp.ppt_residency_acc,        amdsmi_violation_status[dv_ind].active_ppt_pwr);
-    amdsmi_violation_status[dv_ind].per_socket_thrm  = calcualte_violation_percentageAndActiveStatus(amdsmi_gpu_metrics[dv_ind].accumulation_counter, amdsmi_gpu_metrics_temp.accumulation_counter,  amdsmi_gpu_metrics[dv_ind].socket_thm_residency_acc, amdsmi_gpu_metrics_temp.socket_thm_residency_acc, amdsmi_violation_status[dv_ind].active_socket_thrm);
-    amdsmi_violation_status[dv_ind].per_vr_thrm      = calcualte_violation_percentageAndActiveStatus(amdsmi_gpu_metrics[dv_ind].accumulation_counter, amdsmi_gpu_metrics_temp.accumulation_counter,  amdsmi_gpu_metrics[dv_ind].vr_thm_residency_acc,     amdsmi_gpu_metrics_temp.vr_thm_residency_acc,     amdsmi_violation_status[dv_ind].active_vr_thrm);
-    amdsmi_violation_status[dv_ind].per_hbm_thrm     = calcualte_violation_percentageAndActiveStatus(amdsmi_gpu_metrics[dv_ind].accumulation_counter, amdsmi_gpu_metrics_temp.accumulation_counter,  amdsmi_gpu_metrics[dv_ind].hbm_thm_residency_acc,    amdsmi_gpu_metrics_temp.hbm_thm_residency_acc,    amdsmi_violation_status[dv_ind].active_hbm_thrm);
+    amdsmi_violation_status[dv_ind].per_prochot_thrm = calcualte_violation_percentageAndActiveStatus(amdsmi_gpu_metrics[dv_ind].accumulation_counter, amdsmi_gpu_metrics_temp.accumulation_counter,  amdsmi_gpu_metrics[dv_ind].prochot_residency_acc,    amdsmi_gpu_metrics_temp.prochot_residency_acc,    &(amdsmi_violation_status[dv_ind].active_prochot_thrm));
+    amdsmi_violation_status[dv_ind].per_ppt_pwr      = calcualte_violation_percentageAndActiveStatus(amdsmi_gpu_metrics[dv_ind].accumulation_counter, amdsmi_gpu_metrics_temp.accumulation_counter,  amdsmi_gpu_metrics[dv_ind].ppt_residency_acc,        amdsmi_gpu_metrics_temp.ppt_residency_acc,        &amdsmi_violation_status[dv_ind].active_ppt_pwr);
+    amdsmi_violation_status[dv_ind].per_socket_thrm  = calcualte_violation_percentageAndActiveStatus(amdsmi_gpu_metrics[dv_ind].accumulation_counter, amdsmi_gpu_metrics_temp.accumulation_counter,  amdsmi_gpu_metrics[dv_ind].socket_thm_residency_acc, amdsmi_gpu_metrics_temp.socket_thm_residency_acc, &amdsmi_violation_status[dv_ind].active_socket_thrm);
+    amdsmi_violation_status[dv_ind].per_vr_thrm      = calcualte_violation_percentageAndActiveStatus(amdsmi_gpu_metrics[dv_ind].accumulation_counter, amdsmi_gpu_metrics_temp.accumulation_counter,  amdsmi_gpu_metrics[dv_ind].vr_thm_residency_acc,     amdsmi_gpu_metrics_temp.vr_thm_residency_acc,     &amdsmi_violation_status[dv_ind].active_vr_thrm);
+    amdsmi_violation_status[dv_ind].per_hbm_thrm     = calcualte_violation_percentageAndActiveStatus(amdsmi_gpu_metrics[dv_ind].accumulation_counter, amdsmi_gpu_metrics_temp.accumulation_counter,  amdsmi_gpu_metrics[dv_ind].hbm_thm_residency_acc,    amdsmi_gpu_metrics_temp.hbm_thm_residency_acc,    &amdsmi_violation_status[dv_ind].active_hbm_thrm);
 
     if (enable_debug_level(GOAMDSMI_DEBUG_LEVEL_1)) {printf("AMDSMI, %s for Gpu:%d, AccCounter:%llu, AccProchotThrm:%llu, AccPptPwr:%llu, AccSocketThrm:%llu, AccVrThrm:%llu, AccHbmThrm:%llu, PercProchotThrm:%llu, PercPptPwr:%llu, PercSocketThrm:%llu, PercVrThrm:%llu, PercHbmThrm:%llu\n", readSuccess?"Success":"Failed", dv_ind, (unsigned long long)(amdsmi_violation_status[dv_ind].acc_counter), (unsigned long long)(amdsmi_violation_status[dv_ind].acc_prochot_thrm), (unsigned long long)(amdsmi_violation_status[dv_ind].acc_ppt_pwr), (unsigned long long)(amdsmi_violation_status[dv_ind].acc_socket_thrm), (unsigned long long)(amdsmi_violation_status[dv_ind].acc_vr_thrm), (unsigned long long)(amdsmi_violation_status[dv_ind].acc_hbm_thrm), (unsigned long long)(amdsmi_violation_status[dv_ind].per_prochot_thrm), (unsigned long long)(amdsmi_violation_status[dv_ind].per_ppt_pwr), (unsigned long long)(amdsmi_violation_status[dv_ind].per_socket_thrm), (unsigned long long)(amdsmi_violation_status[dv_ind].per_vr_thrm), (unsigned long long)(amdsmi_violation_status[dv_ind].per_hbm_thrm));}
     return readSuccess;
