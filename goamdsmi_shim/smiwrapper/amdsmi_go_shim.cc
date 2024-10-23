@@ -527,8 +527,8 @@ uint64_t goamdsmi_gpu_dev_power_get(uint32_t dv_ind)
 int64_t goamdsmi_gpu_dev_temp_metric_get(uint32_t dv_ind, uint32_t sensor, uint32_t metric)
 {
     bool readSuccess             = false;
-    uint64_t gpu_temperature     = GOAMDSMI_UINT64_MAX;
-    int64_t gpu_temperature_temp = GOAMDSMI_UINT64_MAX;
+    int64_t gpu_temperature      = GOAMDSMI_INT64_MAX;
+    int64_t gpu_temperature_temp = GOAMDSMI_INT64_MAX;
 
     if((dv_ind < num_gpu_devices_inAllSocket) && (AMDSMI_STATUS_SUCCESS == amdsmi_get_temp_metric(amdsmi_processor_handle_all_gpu_device_across_socket[dv_ind], (amdsmi_temperature_type_t)sensor, (amdsmi_temperature_metric_t)metric, &gpu_temperature_temp)))
     {
