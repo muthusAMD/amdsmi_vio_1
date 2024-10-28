@@ -43,6 +43,7 @@ package goamdsmi
 #cgo LDFLAGS: -L/opt/rocm/lib -L/opt/rocm/lib64 -lgoamdsmi_shim64 -Wl,--unresolved-symbols=ignore-in-object-files
 #include <stdint.h>
 #include <amdsmi_go_shim.h>
+#include <amd_smi/amdsmi.h>
 */
 import "C"
 
