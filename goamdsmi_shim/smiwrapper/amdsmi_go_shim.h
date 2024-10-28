@@ -37,6 +37,7 @@
  */
 
 #include "goamdsmi.h"
+#include <amd_smi/amdsmi.h>
 ////////////////////////////////////////////////------------CPU------------////////////////////////////////////////////////
 /**
  *  @brief Go language stub to initialize the AMDSMI library
@@ -587,4 +588,4 @@ uint64_t goamdsmi_gpu_dev_gpu_memory_total_get(uint32_t dv_ind);
  *  @retval -1 is returned upon failure.
  *
  */
-bool goamdsmi_gpu_snap_violation_record(uint32_t dv_ind);
+amdsmi_gpu_metrics_t goamdsmi_gpu_snap_violation_record(uint32_t dv_ind);

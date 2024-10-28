@@ -39,7 +39,6 @@
 #include <stdint.h>
 #include <string.h>
 #include "amdsmi_go_shim.h"
-#include <amd_smi/amdsmi.h>
 #include <unistd.h>
 //#include <chrono>
 #define nullptr ((void*)0)
@@ -105,6 +104,35 @@ goamdsmi_status_t check_hsmp_driver()
     return  is_file_present(AMDHSMP_DRIVER_NAME, AMDHSMP_INITSTATE_FILE);
 }
 
+void go_shim_amdsmiapu_init_variables()
+{
+    for(int loopCounter = 0; loopCounter < MAX_GPU_DEVICE_ACROSS_SYSTEM; loopCounter++)
+    {
+        amdsmi_gpu_metrics_snap_available[loopCounter] = false;
+
+        amdsmi_violation_status[loopCounter].reference_timestamp = GOAMDSMI_UINT64_MAX;
+        amdsmi_violation_status[loopCounter].acc_counter         = GOAMDSMI_UINT64_MAX;
+
+        amdsmi_violation_status[loopCounter].acc_prochot_thrm    = GOAMDSMI_UINT64_MAX;
+        amdsmi_violation_status[loopCounter].acc_ppt_pwr         = GOAMDSMI_UINT64_MAX;
+        amdsmi_violation_status[loopCounter].acc_socket_thrm     = GOAMDSMI_UINT64_MAX;
+        amdsmi_violation_status[loopCounter].acc_vr_thrm         = GOAMDSMI_UINT64_MAX;
+        amdsmi_violation_status[loopCounter].acc_hbm_thrm        = GOAMDSMI_UINT64_MAX;
+
+        amdsmi_violation_status[loopCounter].per_prochot_thrm    = GOAMDSMI_UINT64_MAX;
+        amdsmi_violation_status[loopCounter].per_ppt_pwr         = GOAMDSMI_UINT64_MAX;
+        amdsmi_violation_status[loopCounter].per_socket_thrm     = GOAMDSMI_UINT64_MAX;
+        amdsmi_violation_status[loopCounter].per_vr_thrm         = GOAMDSMI_UINT64_MAX;
+        amdsmi_violation_status[loopCounter].per_hbm_thrm        = GOAMDSMI_UINT64_MAX;
+
+        amdsmi_violation_status[loopCounter].active_prochot_thrm = GOAMDSMI_UINT8_MAX;
+        amdsmi_violation_status[loopCounter].active_ppt_pwr      = GOAMDSMI_UINT8_MAX;
+        amdsmi_violation_status[loopCounter].active_socket_thrm  = GOAMDSMI_UINT8_MAX;
+        amdsmi_violation_status[loopCounter].active_vr_thrm      = GOAMDSMI_UINT8_MAX;
+        amdsmi_violation_status[loopCounter].active_hbm_thrm     = GOAMDSMI_UINT8_MAX;
+    }
+}
+
 goamdsmi_status_t go_shim_amdsmiapu_init(goamdsmi_Init_t goamdsmi_Init)
 {
     if((GOAMDSMI_CPU_INIT == goamdsmi_Init) && (true == cpuInitCompleted))
@@ -135,7 +163,7 @@ goamdsmi_status_t go_shim_amdsmiapu_init(goamdsmi_Init_t goamdsmi_Init)
         }
     }
 
-
+    go_shim_amdsmiapu_init_variables();
     if ((GOAMDSMI_STATUS_SUCCESS == check_amdgpu_driver()) && (GOAMDSMI_STATUS_SUCCESS == check_hsmp_driver())) 
     {
         if (enable_debug_level(GOAMDSMI_DEBUG_LEVEL_2)) {printf("AMDSMI, Status, Identified APU machine and going to enumurate APU\n");}
@@ -719,7 +747,7 @@ bool goamdsmi_gpu_snap_violation_record(uint32_t dv_ind)
             amdsmi_gpu_metrics_snap_available[dv_ind] = true;
         }
         if (enable_debug_level(GOAMDSMI_DEBUG_LEVEL_1)) {printf("AMDSMI, %s for Gpu:%d, StartGpuViolationRecord\n", readSuccess?"Success":"Failed", dv_ind);}
-        if(false == readSuccess) return false;
+        if(false == readSuccess) amdsmi_violation_status[dv_ind];
 
         // wait 1ms before reading again
         usleep(1*1000);
@@ -737,7 +765,7 @@ bool goamdsmi_gpu_snap_violation_record(uint32_t dv_ind)
         readSuccess = true;
     }
     if (enable_debug_level(GOAMDSMI_DEBUG_LEVEL_1)) {printf("AMDSMI, %s for Gpu:%d, SnapGpuViolationRecord\n", readSuccess?"Success":"Failed", dv_ind);}
-    if(false == readSuccess) return false;
+    if(false == readSuccess) return  amdsmi_violation_status[dv_ind];
 
     //const auto p1 = std::chrono::system_clock::now();
     //auto current_time = std::chrono::duration_cast<std::chrono::microseconds>(p1.time_since_epoch()).count();
@@ -758,5 +786,5 @@ bool goamdsmi_gpu_snap_violation_record(uint32_t dv_ind)
     amdsmi_violation_status[dv_ind].per_hbm_thrm     = calcualte_violation_percentageAndActiveStatus(amdsmi_gpu_metrics[dv_ind].accumulation_counter, amdsmi_gpu_metrics_temp.accumulation_counter,  amdsmi_gpu_metrics[dv_ind].hbm_thm_residency_acc,    amdsmi_gpu_metrics_temp.hbm_thm_residency_acc,    &amdsmi_violation_status[dv_ind].active_hbm_thrm);
 
     if (enable_debug_level(GOAMDSMI_DEBUG_LEVEL_1)) {printf("AMDSMI, %s for Gpu:%d, AccCounter:%llu, AccProchotThrm:%llu, AccPptPwr:%llu, AccSocketThrm:%llu, AccVrThrm:%llu, AccHbmThrm:%llu, PercProchotThrm:%llu, PercPptPwr:%llu, PercSocketThrm:%llu, PercVrThrm:%llu, PercHbmThrm:%llu\n", readSuccess?"Success":"Failed", dv_ind, (unsigned long long)(amdsmi_violation_status[dv_ind].acc_counter), (unsigned long long)(amdsmi_violation_status[dv_ind].acc_prochot_thrm), (unsigned long long)(amdsmi_violation_status[dv_ind].acc_ppt_pwr), (unsigned long long)(amdsmi_violation_status[dv_ind].acc_socket_thrm), (unsigned long long)(amdsmi_violation_status[dv_ind].acc_vr_thrm), (unsigned long long)(amdsmi_violation_status[dv_ind].acc_hbm_thrm), (unsigned long long)(amdsmi_violation_status[dv_ind].per_prochot_thrm), (unsigned long long)(amdsmi_violation_status[dv_ind].per_ppt_pwr), (unsigned long long)(amdsmi_violation_status[dv_ind].per_socket_thrm), (unsigned long long)(amdsmi_violation_status[dv_ind].per_vr_thrm), (unsigned long long)(amdsmi_violation_status[dv_ind].per_hbm_thrm));}
-    return readSuccess;
+    return  amdsmi_violation_status[dv_ind];
 }

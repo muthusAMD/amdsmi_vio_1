@@ -43,6 +43,7 @@
 #include <stdio.h>
 
 #define GOAMDSMI_VALUE_0           0
+#define GOAMDSMI_UINT8_MAX         0xFF
 #define GOAMDSMI_UINT16_MAX        0xFFFF
 #define GOAMDSMI_UINT32_MAX        0xFFFFFFFF
 #define GOAMDSMI_UINT64_MAX        0xFFFFFFFFFFFFFFFF

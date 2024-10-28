@@ -184,6 +184,6 @@ func GO_cpu_prochot_status_get(i int) (C.uint32_t) {
 	return C.goamdsmi_cpu_prochot_status_get(C.uint(i))
 }
 
-func GO_gpu_snap_violation_record(i int) (bool) {
-	return bool(C.goamdsmi_gpu_snap_violation_record(C.uint(i)))
+func GO_gpu_snap_violation_record(i int) (C.amdsmi_gpu_metrics_t) {
+	return (C.goamdsmi_gpu_snap_violation_record(C.uint(i)))
 }
