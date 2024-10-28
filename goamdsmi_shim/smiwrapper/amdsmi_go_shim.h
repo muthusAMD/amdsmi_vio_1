@@ -588,4 +588,4 @@ uint64_t goamdsmi_gpu_dev_gpu_memory_total_get(uint32_t dv_ind);
  *  @retval -1 is returned upon failure.
  *
  */
-amdsmi_gpu_metrics_t goamdsmi_gpu_snap_violation_record(uint32_t dv_ind);
+amdsmi_violation_status_t goamdsmi_gpu_snap_violation_record(uint32_t dv_ind);

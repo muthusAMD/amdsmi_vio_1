@@ -730,7 +730,7 @@ uint64_t calcualte_violation_percentageAndActiveStatus(uint64_t start_acc_counte
    return voilation_percentage;
 }
 
-amdsmi_gpu_metrics_t goamdsmi_gpu_snap_violation_record(uint32_t dv_ind)
+amdsmi_violation_status_t goamdsmi_gpu_snap_violation_record(uint32_t dv_ind)
 {
     bool readSuccess                   = false;
     if(false == amdsmi_gpu_metrics_snap_available[dv_ind])
