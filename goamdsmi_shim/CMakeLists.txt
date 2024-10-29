@@ -84,6 +84,7 @@ set(go_amd_smi_includes)
 
 
 add_subdirectory(smiwrapper)
+list(APPEND go_amd_smi_headers ../include/amd_smi/amdsmi.h ${go_amd_smi_headers})
 list(APPEND go_amd_smi_headers smiwrapper/goamdsmi.h ${go_amd_smi_headers})
 list(APPEND go_amd_smi_headers smiwrapper/amdsmi_go_shim.h ${go_amd_smi_headers})
 list(APPEND go_amd_smi_sources smiwrapper/amdsmi_go_shim.c)
@@ -114,6 +115,7 @@ if ("${CMAKE_BUILD_TYPE}" STREQUAL Release)
 endif ()
 
 set(go_amd_smi_install_headers
+    ../include/amd_smi/amdsmi.h
     smiwrapper/goamdsmi.h
     smiwrapper/amdsmi_go_shim.h
 )
